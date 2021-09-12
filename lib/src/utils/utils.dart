@@ -4,6 +4,7 @@ import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_ml_kit/google_ml_kit.dart';
+import 'package:omni_vision/src/utils/omni_image.dart';
 import 'package:omni_vision/src/widgets/vision.dart';
 
 part 'google_ml_kit.dart';
@@ -14,12 +15,6 @@ class OmniUtils {
     final cameras = await availableCameras();
     final camera = cameras.firstWhereOrNull((camera) => camera.lensDirection == dir);
     return camera ?? (cameras.isEmpty ? null : cameras.first);
-  }
-
-  static Uint8List concatenatePlanes(List<Plane> planes) {
-    final allBytes = WriteBuffer();
-    planes.forEach((plane) => allBytes.putUint8List(plane.bytes));
-    return allBytes.done().buffer.asUint8List();
   }
 
   static InputImageData buildMetaData(
@@ -42,17 +37,18 @@ class OmniUtils {
     );
   }
 
+  static Uint8List concatenatePlanes(List<Plane> planes) {
+    final allBytes = WriteBuffer();
+    planes.forEach((plane) => allBytes.putUint8List(plane.bytes));
+    return allBytes.done().buffer.asUint8List();
+  }
+
   static Future<T> detect<T>(
     CameraImage image,
     HandleDetection<T> handleDetection,
-    InputImageRotation rotation,
+    int rotation,
   ) async {
-    return handleDetection(
-      InputImage.fromBytes(
-        bytes: OmniUtils.concatenatePlanes(image.planes),
-        inputImageData: OmniUtils.buildMetaData(image, rotation),
-      ),
-    );
+    return handleDetection(OmniImage(image: image, rotation: rotation));
   }
 }
 

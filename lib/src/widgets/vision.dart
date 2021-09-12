@@ -11,10 +11,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_ml_kit/google_ml_kit.dart';
 import 'package:omni_vision/src/utils/utils.dart';
+import 'package:omni_vision/src/utils/omni_image.dart';
 import 'package:visibility_detector/visibility_detector.dart';
-export 'package:camera/camera.dart';
 
-typedef HandleDetection<T> = Future<T> Function(dynamic image);
+typedef HandleDetection<T> = Future<T> Function(OmniImage image);
 typedef ErrorWidgetBuilder = Widget Function(BuildContext context, CameraError error);
 enum CameraError {
   unknown,
@@ -29,7 +29,7 @@ enum _CameraState {
   ready,
 }
 
-class CameraMlVision<T> extends StatefulWidget {
+class OmniMlVision<T> extends StatefulWidget {
   final HandleDetection<T> detector;
   final Function(T) onResult;
   final WidgetBuilder? loadingBuilder;
@@ -39,7 +39,7 @@ class CameraMlVision<T> extends StatefulWidget {
   final ResolutionPreset? resolution;
   final Function? onDispose;
 
-  CameraMlVision({
+  OmniMlVision({
     Key? key,
     required this.onResult,
     required this.detector,
@@ -52,14 +52,14 @@ class CameraMlVision<T> extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  CameraMlVisionState createState() => CameraMlVisionState<T>();
+  OmniMlVisionState createState() => OmniMlVisionState<T>();
 }
 
-class CameraMlVisionState<T> extends State<CameraMlVision<T>> with WidgetsBindingObserver {
+class OmniMlVisionState<T> extends State<OmniMlVision<T>> with WidgetsBindingObserver {
   XFile? _lastImage;
   final _visibilityKey = UniqueKey();
   CameraController? _cameraController;
-  InputImageRotation? _rotation;
+  int? _rotation;
   _CameraState _cameraMlVisionState = _CameraState.loading;
   CameraError _cameraError = CameraError.unknown;
   bool _alreadyCheckingImage = false;
@@ -74,7 +74,7 @@ class CameraMlVisionState<T> extends State<CameraMlVision<T>> with WidgetsBindin
   }
 
   @override
-  void didUpdateWidget(CameraMlVision<T> oldWidget) {
+  void didUpdateWidget(OmniMlVision<T> oldWidget) {
     if (oldWidget.resolution != widget.resolution) {
       _initialize();
     }
@@ -142,7 +142,7 @@ class CameraMlVisionState<T> extends State<CameraMlVision<T>> with WidgetsBindin
 
   CameraValue? get cameraValue => _cameraController?.value;
 
-  InputImageRotation? get imageRotation => _rotation;
+  InputImageRotation? get imageRotation => _rotation!.toInputImageRotation();
 
   Future<void> Function() get prepareForVideoRecording => _cameraController!.prepareForVideoRecording;
 
@@ -251,7 +251,7 @@ class CameraMlVisionState<T> extends State<CameraMlVision<T>> with WidgetsBindin
     setState(() {
       _cameraMlVisionState = _CameraState.ready;
     });
-    _rotation = description.sensorOrientation.toInputImageRotation();
+    _rotation = description.sensorOrientation;
 
     //FIXME hacky technique to avoid having black screen on some android devices
     await Future.delayed(Duration(milliseconds: 200));
